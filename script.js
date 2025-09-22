@@ -269,13 +269,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (backButton) backButton.addEventListener('click', () => {
-        history.pushState({}, '', window.location.pathname);
-        showCategoryView();
+        history.back();
     });
 
     if (backSearchButton) backSearchButton.addEventListener('click', () => {
-        history.pushState({}, '', window.location.pathname);
-        showCategoryView();
+        history.back();
     });
 
     if (cartButton) {
@@ -383,6 +381,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Mettre à jour le compteur du panier à l'ouverture
     updateCartCount();
+
+    // Listen for browser back/forward buttons
+    window.addEventListener('popstate', async (event) => {
+        if (event.state && event.state.category) {
+            // User navigated to a category
+            const catSlug = event.state.category;
+            try {
+                const categories = await supabaseAPI.getMainCategories();
+                const cat = categories.find(c => (c.slug && c.slug === catSlug) || c.unique_id === catSlug);
+                if (cat) {
+                    currentCategoryId = cat.unique_id;
+                    currentCategoryName = cat.name;
+                    await loadProductsByCategory(cat.unique_id);
+                    showCategoryProductsView(cat.name);
+                }
+            } catch (err) {
+                console.error('Erreur lors de la navigation:', err);
+            }
+        } else {
+            // User navigated back to main page
+            showCategoryView();
+        }
+    });
 });
 
 // --- Vues ---
