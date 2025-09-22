@@ -216,6 +216,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.body.classList.remove('menu-open');
     }
 
+    // Make closeMenu globally accessible
+    window.closeMenu = closeMenu;
+
     if (menuToggle && leftMenu) {
         menuToggle.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -228,7 +231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (menuClose && leftMenu) {
         menuClose.addEventListener('click', (e) => {
             e.stopPropagation();
-            closeMenu();
+            if (window.closeMenu) window.closeMenu();
         });
     }
 
@@ -236,7 +239,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (menuOverlay) {
         menuOverlay.addEventListener('click', (e) => {
             e.stopPropagation();
-            closeMenu();
+            if (window.closeMenu) window.closeMenu();
         });
     }
 
@@ -244,7 +247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.addEventListener('click', (e) => {
         if (leftMenu && !leftMenu.classList.contains('hidden')) {
             if (!leftMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-                closeMenu();
+                if (window.closeMenu) window.closeMenu();
             }
         }
     });
@@ -253,7 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (leftMenu) {
         leftMenu.addEventListener('click', (e) => {
             if (e.target.tagName === 'A' || e.target.closest('a')) {
-                closeMenu();
+                if (window.closeMenu) window.closeMenu();
             }
         });
     }
@@ -505,7 +508,7 @@ function displayCategoriesInMenu(categories) {
             window.currentCategoryId = cat.unique_id;
             window.currentSearchQuery = null;
             // Close menu after category selection
-            closeMenu();
+            if (window.closeMenu) window.closeMenu();
         });
 
         menuCategoryList.appendChild(div);
@@ -843,7 +846,7 @@ function toggleCartSidebar() {
 function openCartSidebar() {
     const sidebar = document.getElementById('cart-sidebar');
     if (!sidebar) return;
-    closeMenu(); // Close left menu if open
+    if (window.closeMenu) window.closeMenu(); // Close left menu if open
     renderCartSidebar();
     sidebar.classList.remove('hidden');
     // prevent body scroll while sidebar open
@@ -862,7 +865,7 @@ function closeCartSidebar() {
 function openCartPreviewModal() {
     const modal = document.getElementById('cart-preview-modal');
     if (!modal) return;
-    closeMenu(); // Close left menu if open
+    if (window.closeMenu) window.closeMenu(); // Close left menu if open
     renderCartPreviewModal();
     modal.classList.remove('hidden');
     modal.setAttribute('aria-hidden', 'false');
