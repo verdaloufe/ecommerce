@@ -214,6 +214,22 @@ body {
     background-color: rgba(0,0,0,0.05);
 }
 
+.cart-button::after {
+    content: attr(data-total);
+    position: absolute;
+    bottom: -16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    font-weight: 600;
+    color: #ff7a00;
+    white-space: nowrap;
+    background: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 .cart-count {
     position: absolute;
     top: -2px;
@@ -334,14 +350,17 @@ body {
 /* Categories Section */
 .categories-header {
     display: flex;
-    align-items: center;
+    align-items: left;
     gap: 1rem;
     margin-bottom: 2rem;
-    justify-content: center;
+    justify-content: left;
 }
 
 .categories-icon {
-    background: #ff7a00;
+    background-image: url('https://0f44eec5808b7046a3dcded730e63b6d.cdn.bubble.io/f1702112478445x421579057043881540/chef-hat.png?ignore_imgix=true');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
     border-radius: 12px;
     padding: 0.8rem;
     display: flex;
@@ -349,6 +368,8 @@ body {
     justify-content: center;
     color: white;
     flex-shrink: 0;
+    width: 48px; /* Ajuste selon la taille souhaitée */
+    height: 48px;
 }
 
 .categories-title {
@@ -359,7 +380,7 @@ body {
 }
 
 .categories-highlight {
-    color: #e74c3c;
+    color: #ff7979;
 }
 
 
@@ -367,8 +388,9 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 0.75rem;
-    padding: 1.5rem 1rem;
+    padding: 8px 8px;
     background: white;
     border-radius: 15px;
     border: 2px solid #0c2e56;
@@ -376,6 +398,7 @@ body {
     cursor: pointer;
     text-decoration: none;
     color: inherit;
+    height: 150px;
 }
 
 .category-item:hover {
@@ -808,7 +831,6 @@ main {
 }
 
 #categories h2 {
-    margin-bottom: 1.5rem;
     color: #2c3e50;
     font-size: 1.5rem;
 }
@@ -1387,7 +1409,7 @@ body.menu-open {
 
     .categories-header {
         flex-direction: column;
-        text-align: center;
+        text-align: left;
         gap: 1rem;
     }
 

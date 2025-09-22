@@ -59,10 +59,17 @@ function addToCart(item) {
 
 function updateCartCount() {
     const el = document.getElementById('cart-count');
-    if (!el) return;
+    const cartButton = document.getElementById('cart-button');
+    if (!el || !cartButton) return;
+
     const cart = getCart();
-    const total = cart.reduce((s, it) => s + (it.qty || 0), 0);
-    el.textContent = total;
+    const totalItems = cart.reduce((s, it) => s + (it.qty || 0), 0);
+    const totalPrice = cart.reduce((s, it) => s + ((it.price || 0) * (it.qty || 0)), 0);
+
+    el.textContent = totalItems;
+
+    // Met à jour le total affiché sous l'icône
+    cartButton.setAttribute('data-total', totalItems > 0 ? formatPrice(totalPrice) : '');
 }
 
 async function updateCartDisplay() {
@@ -895,7 +902,18 @@ document.addEventListener('click', (e) => {
     }
 });
 
-function renderCartSidebar() {
+// Fonction helper pour récupérer l'image d'un produit
+async function getProductImage(productId) {
+    try {
+        const product = await supabaseAPI.getProductById(productId);
+        return product ? normalizeImageUrl(product.main_picture) : 'placeholder.jpg';
+    } catch (error) {
+        console.error('Erreur lors de la récupération de l\'image du produit:', error);
+        return 'placeholder.jpg';
+    }
+}
+
+async function renderCartSidebar() {
     const contentContainer = document.getElementById('cart-sidebar-content');
 
     if (!contentContainer) return;
@@ -917,12 +935,16 @@ function renderCartSidebar() {
     const itemsList = document.createElement('div');
     itemsList.className = 'cart-sidebar-items';
 
-    cart.forEach(item => {
+    // Récupérer les images pour tous les produits du panier
+    const imagePromises = cart.map(item => getProductImage(item.id));
+    const images = await Promise.all(imagePromises);
+
+    cart.forEach((item, index) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'cart-sidebar-item';
         itemDiv.innerHTML = `
             <div class="cart-sidebar-item-image">
-                <img src="placeholder.jpg" alt="${item.name}">
+                <img src="${images[index]}" alt="${item.name}">
             </div>
             <div class="cart-sidebar-item-details">
                 <div class="cart-sidebar-item-name">${item.name}</div>
