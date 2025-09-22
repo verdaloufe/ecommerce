@@ -9,45 +9,107 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header>
-        <div class="header-left" style="display:flex;align-items:center;gap:0.75rem;">
-            <a href="index.html" aria-label="Accueil">
-                <img id="logo" src="https://0f44eec5808b7046a3dcded730e63b6d.cdn.bubble.io/f1693576080956x788177672717479400/ecomalin_orange.webp?ignore_imgix=true" alt="Ecomalin" style="width:48px;height:48px;object-fit:contain;">
+    <header class="header">
+        <div class="header-left">
+            <a href="index.html" aria-label="Accueil" class="logo-link">
+                <div class="logo">
+                    <div class="logo-circle logo-orange"></div>
+                    <div class="logo-circle logo-blue"></div>
+                </div>
             </a>
-            <button id="menu-toggle">Menu</button>
-            <!-- site title hidden by request -->
+            <button id="menu-toggle" class="menu-button">
+                <span class="hamburger-icon"></span>
+                <span class="menu-text">MENU</span>
+            </button>
         </div>
-        <div class="header-right" style="display:flex;align-items:center;gap:0.75rem;">
-            <input type="search" id="search-bar" placeholder="Rechercher...">
-            <div id="cart" aria-live="polite" style="display:flex;align-items:center;gap:0.5rem;">
-                <button id="cart-button" style="background:none;border:none;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;gap:0.4rem;" aria-label="Voir le panier">
-                    <!-- Cart SVG icon -->
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 6H21L20 12H8L6 6Z" stroke="#ff7a00" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="10" cy="19" r="1" fill="#ff7a00"/>
-                        <circle cx="18" cy="19" r="1" fill="#ff7a00"/>
+        <div class="header-center">
+            <div class="search-container">
+                <input type="search" id="search-bar" placeholder="Cherchez par mot clé (exemple : poulet)" class="search-input">
+                <button class="search-button" aria-label="Rechercher">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    <span class="visually-hidden">Panier</span>
                 </button>
-                <span id="cart-count" style="background:#e74c3c;color:white;padding:0.2rem 0.6rem;border-radius:12px;font-weight:600;">0</span>
             </div>
-            <button id="profile-button" aria-label="Profil" style="width:40px;height:40px;border-radius:20px;border:none;background:#f1f3f5;display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer;">
-                <span id="profile-initial">U</span>
+        </div>
+        <div class="header-right">
+            <div id="cart-header" class="cart-header">
+                <button id="cart-button" class="cart-button" aria-label="Panier">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 6H21L20 12H8L6 6Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="10" cy="19" r="1" fill="currentColor"/>
+                        <circle cx="18" cy="19" r="1" fill="currentColor"/>
+                    </svg>
+                    <span id="cart-count" class="cart-count">0</span>
+                </button>
+            </div>
+            <button id="profile-button" aria-label="Profil" class="profile-button">
+                <span id="profile-initial">1</span>
             </button>
         </div>
     </header>
+
+    <section class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="brand-name">Ecomalin</span>,
+                <span class="tagline"><span class="grossiste">grossiste</span> alimentaire, produits <span class="professionnels">professionnels</span>, le frais en <span class="highlight">GROS</span> pour tous</span>
+            </h1>
+            <div class="location-info">
+                <svg class="location-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 10C21 17 12 23 12 23S3 17 3 10C3 5 7 1 12 1S21 5 21 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <span>Notre magasin se trouve à Saint-Jean d'Angely en Charentes maritimes</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Menu overlay -->
+    <div id="menu-overlay" class="menu-overlay hidden"></div>
+
+    <!-- Cart sidebar (floating panel from right) -->
+    <aside id="cart-sidebar" class="cart-sidebar hidden">
+        <div class="cart-sidebar-header">
+            <h3>Mon panier</h3>
+            <button id="cart-sidebar-close" class="cart-sidebar-close-btn" aria-label="Fermer le panier">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+        <div id="cart-sidebar-content" class="cart-sidebar-content">
+            <!-- Cart content will be injected here -->
+        </div>
+    </aside>
+
     <nav id="left-menu" class="hidden">
+        <div class="menu-header">
+            <h3 style="color:white;margin:0;">Menu</h3>
+            <button id="menu-close" class="menu-close-btn" aria-label="Fermer le menu">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
         <div class="menu-categories" style="padding:1rem;">
-            <h3 style="color:white;margin-bottom:0.5rem;">Catégories</h3>
-            <ul id="menu-category-list" style="list-style:none;padding:0;margin:0;">
+            <h4 style="color:white;margin-bottom:1rem;font-size:1.1rem;">Catégories</h4>
+            <div id="menu-category-list" class="menu-category-list">
                 <!-- Les catégories seront injectées ici -->
-            </ul>
+            </div>
         </div>
     </nav>
     <main>
         <div id="category-view">
             <section id="categories">
-                <h2>Catégories</h2>
+                <div class="categories-header">
+                    <div class="categories-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 18H18V16H6V18ZM6 13H18V11H6V13ZM6 6V8H18V6H6ZM20 3H4C3.45 3 3 3.45 3 4V20C3 20.55 3.45 21 4 21H20C20.55 21 21 20.55 21 20V4C21 3.45 20.55 3 20 3ZM20 20H4V4H20V20Z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h2 class="categories-title">Explorez et trouvez le produit idéal dans nos <span class="categories-highlight">Catégories</span></h2>
+                </div>
                 <div class="category-grid">
                     <!-- Les catégories seront chargées dynamiquement -->
                 </div>
@@ -60,7 +122,12 @@
         
         <div id="category-products-view" style="display: none;">
             <div class="back-header">
-                <button id="back-button">← Retour</button>
+                <button id="back-button">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span id="back-button-text">Retour</span>
+                </button>
                 <h2 id="category-title">Produits de la catégorie</h2>
             </div>
             <section id="category-products">
@@ -81,6 +148,29 @@
     <footer>
         <p>&copy; 2023 @ecomalin.net</p>
     </footer>
+
+    <!-- Cart preview modal (quick view from header) -->
+    <div id="cart-preview-modal" class="cart-preview-modal hidden" aria-hidden="true" role="dialog" aria-label="Aperçu du panier">
+        <div class="cart-preview-overlay" data-close="true"></div>
+        <div class="cart-preview-content">
+            <div class="cart-preview-header">
+                <h4>Mon panier</h4>
+                <button id="cart-preview-close" aria-label="Fermer">✕</button>
+            </div>
+            <div id="cart-preview-items" class="cart-preview-items">
+                <!-- Items will be injected here -->
+            </div>
+            <div class="cart-preview-footer">
+                <div class="cart-preview-total">
+                    <span>Total :</span>
+                    <strong id="cart-preview-total-amount">€0,00</strong>
+                </div>
+                <div class="cart-preview-actions">
+                    <button id="cart-preview-checkout" class="btn-primary">Commander</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Cart modal (hidden by default) -->
     <div id="cart-modal" class="modal hidden" style="display:none" aria-hidden="true" role="dialog" aria-label="Panier">

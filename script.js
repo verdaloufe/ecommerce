@@ -1,14 +1,34 @@
 // Variables globales
 let currentCategoryId = null;
 let currentCategoryName = null;
+let originCountriesMap = new Map(); // Pour stocker les pays d'origine (unique_id -> name)
 
 // Préfixe https: si l'URL commence par //
 function normalizeImageUrl(url) {
-    if (!url) return null;
+    if (!url || url.trim() === '') {
+        return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjgwIiBoZWlnaHQ9IjE0MCIgdmlld0JveD0iMCAwIDI4MCAxNDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyODAiIGhlaWdodD0iMTQwIiBmaWxsPSIjRjVGNUY1Ii8+CjxwYXRoIGQ9Ik0xNDAgMzJMMTUyIDQwSDE4NlY0OEgxNTJMMTk2IDg3SDg0TDE0MCA0OFoiIGZpbGw9IiNDOUM5QzkiLz4KPHR5cGUgZmlsbD0iIzRBOTBFMiIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE2IiB4PSIxNDAiIHk9Ijc1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5ObyBJbWFnZTwvdGV4dD4KPC9zdmc+';
+    }
     url = String(url).trim();
     if (url.startsWith('//')) return 'https:' + url;
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     return url;
+}
+
+
+// Format number to show decimals only when necessary
+function formatWeightValue(value) {
+    if (value === null || value === undefined || value === '') return '';
+    const num = parseFloat(value);
+    if (isNaN(num)) return '';
+
+    // If it's a whole number, show no decimals
+    if (num === Math.floor(num)) {
+        return num.toString();
+    }
+
+    // Otherwise show up to 3 decimal places, removing trailing zeros
+    const fixed = num.toFixed(3);
+    return fixed.replace(/\.?0+$/, '');
 }
 
 // --- Panier simple stocké en localStorage ---
@@ -45,17 +65,197 @@ function updateCartCount() {
     el.textContent = total;
 }
 
+async function updateCartDisplay() {
+    // Update cart count in header
+    updateCartCount();
+
+    // Update quantity displays in existing tiles
+    updateQuantityDisplays();
+
+    // Update cart modal if open
+    const cartModal = document.getElementById('cart-modal');
+    if (cartModal && !cartModal.classList.contains('hidden')) {
+        renderCartModal();
+    }
+
+    // Update cart sidebar if open
+    const cartSidebar = document.getElementById('cart-sidebar');
+    if (cartSidebar && !cartSidebar.classList.contains('hidden')) {
+        renderCartSidebar();
+    }
+
+    // Re-render products if we're in a category or search view to update quantities
+    if (currentCategoryId) {
+        // We're in category view, re-render products
+        try {
+            const products = await supabaseAPI.getProductsByCategory(currentCategoryId);
+            displayCategoryProducts(products);
+        } catch (err) {
+            console.error('Erreur lors du re-render des produits de catégorie:', err);
+        }
+    } else if (window.currentSearchQuery) {
+        // We're in search view, re-render products
+        try {
+            const products = await supabaseAPI.searchProducts(window.currentSearchQuery);
+            displaySearchProducts(products);
+        } catch (err) {
+            console.error('Erreur lors du re-render des produits de recherche:', err);
+        }
+    }
+
+    // Force a small delay to ensure DOM is updated
+    setTimeout(() => {
+        updateQuantityDisplays();
+    }, 50);
+}
+
+function updateQuantityDisplays() {
+    const cart = getCart();
+    const cartMap = new Map(cart.map(item => [item.id, item.qty]));
+
+    // Update all product tiles
+    const productTiles = document.querySelectorAll('.product-tile');
+    productTiles.forEach(tile => {
+        const cartButton = tile.querySelector('.add-to-cart');
+        const quantityControls = tile.querySelector('.quantity-controls');
+        const productId = cartButton?.getAttribute('data-id') || tile.querySelector('.quantity-btn')?.getAttribute('data-id');
+
+        if (productId) {
+            const quantity = cartMap.get(productId) || 0;
+
+            if (quantity > 0) {
+                // Replace cart button with quantity controls
+                if (cartButton) {
+                    const actionsDiv = cartButton.parentElement;
+                    actionsDiv.innerHTML = `
+                        <div class="quantity-controls">
+                            <button class="quantity-btn quantity-decrease" data-id="${productId}" aria-label="Diminuer quantité">-</button>
+                            <span class="quantity-display">${quantity}</span>
+                            <button class="quantity-btn quantity-increase" data-id="${productId}" aria-label="Augmenter quantité">+</button>
+                        </div>
+                    `;
+
+                    // Add event listeners to new controls
+                    const increaseBtn = actionsDiv.querySelector('.quantity-increase');
+                    const decreaseBtn = actionsDiv.querySelector('.quantity-decrease');
+
+                    if (increaseBtn) {
+                        increaseBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            changeItemQty(productId, 1);
+                            updateCartDisplay();
+                        });
+                    }
+
+                    if (decreaseBtn) {
+                        decreaseBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            changeItemQty(productId, -1);
+                            updateCartDisplay();
+                        });
+                    }
+                }
+            } else {
+                // Replace quantity controls with cart button
+                if (quantityControls) {
+                    const actionsDiv = quantityControls.parentElement;
+                    actionsDiv.innerHTML = `
+                        <button class="add-to-cart" data-id="${productId}" aria-label="Ajouter au panier" title="Ajouter au panier">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M6 6H21L20 12H8L6 6Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="10" cy="19" r="1" fill="currentColor"/>
+                                <circle cx="18" cy="19" r="1" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    `;
+
+                    // Add event listener to new cart button
+                    const newCartButton = actionsDiv.querySelector('.add-to-cart');
+                    if (newCartButton) {
+                        newCartButton.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            addToCart({ id: productId, name: tile.querySelector('h3').textContent, price: 0, qty: 1 });
+                            updateCartDisplay();
+                        });
+                    }
+                }
+            }
+        }
+    });
+}
+
 // --- Initialisation DOM ---
 document.addEventListener('DOMContentLoaded', async () => {
     const menuToggle = document.getElementById('menu-toggle');
     const leftMenu = document.getElementById('left-menu');
+    const menuOverlay = document.getElementById('menu-overlay');
     const searchBar = document.getElementById('search-bar');
     const backButton = document.getElementById('back-button');
     const backSearchButton = document.getElementById('back-search-button');
     const cartButton = document.getElementById('cart-button');
 
+    // Function to toggle menu
+    function toggleMenu() {
+        const isHidden = leftMenu.classList.contains('hidden');
+        if (isHidden) {
+            leftMenu.classList.remove('hidden');
+            if (menuOverlay) menuOverlay.classList.remove('hidden');
+            document.body.classList.add('menu-open');
+            closeCartSidebar(); // Close cart sidebar when opening left menu
+        } else {
+            leftMenu.classList.add('hidden');
+            if (menuOverlay) menuOverlay.classList.add('hidden');
+            document.body.classList.remove('menu-open');
+        }
+    }
+
+    // Function to close menu
+    function closeMenu() {
+        leftMenu.classList.add('hidden');
+        if (menuOverlay) menuOverlay.classList.add('hidden');
+        document.body.classList.remove('menu-open');
+    }
+
     if (menuToggle && leftMenu) {
-        menuToggle.addEventListener('click', () => leftMenu.classList.toggle('hidden'));
+        menuToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMenu();
+        });
+    }
+
+    // Menu close button
+    const menuClose = document.getElementById('menu-close');
+    if (menuClose && leftMenu) {
+        menuClose.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeMenu();
+        });
+    }
+
+    // Close menu when clicking on overlay
+    if (menuOverlay) {
+        menuOverlay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeMenu();
+        });
+    }
+
+    // Close menu when clicking outside or on menu links
+    document.addEventListener('click', (e) => {
+        if (leftMenu && !leftMenu.classList.contains('hidden')) {
+            if (!leftMenu.contains(e.target) && !menuToggle.contains(e.target)) {
+                closeMenu();
+            }
+        }
+    });
+
+    // Close menu when clicking on menu links
+    if (leftMenu) {
+        leftMenu.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A' || e.target.closest('a')) {
+                closeMenu();
+            }
+        });
     }
 
     if (backButton) backButton.addEventListener('click', () => {
@@ -71,9 +271,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (cartButton) {
         cartButton.addEventListener('click', (e) => {
             e.preventDefault();
-            openCartModal();
+            toggleCartSidebar();
         });
     }
+
+    // Cart sidebar event listeners
+    const cartSidebarCloseBtn = document.getElementById('cart-sidebar-close');
+
+    if (cartSidebarCloseBtn) {
+        cartSidebarCloseBtn.addEventListener('click', closeCartSidebar);
+    }
+
+    // Close cart sidebar when clicking outside
+    document.addEventListener('click', (e) => {
+        const cartSidebar = document.getElementById('cart-sidebar');
+        const cartButton = document.getElementById('cart-button');
+
+        if (cartSidebar && !cartSidebar.classList.contains('hidden')) {
+            // Check if click is outside the sidebar and not on the cart button
+            if (!cartSidebar.contains(e.target) && !cartButton.contains(e.target)) {
+                closeCartSidebar();
+            }
+        }
+    });
+
+    // Cart preview modal event listeners (keeping for compatibility)
+    const cartPreviewCloseBtn = document.getElementById('cart-preview-close');
+    const cartPreviewOverlay = document.querySelector('.cart-preview-overlay');
+    const cartPreviewCheckoutBtn = document.getElementById('cart-preview-checkout');
+
+    if (cartPreviewCloseBtn) {
+        cartPreviewCloseBtn.addEventListener('click', closeCartPreviewModal);
+    }
+
+    if (cartPreviewOverlay) {
+        cartPreviewOverlay.addEventListener('click', closeCartPreviewModal);
+    }
+
+    if (cartPreviewCheckoutBtn) {
+        cartPreviewCheckoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeCartPreviewModal();
+            // TODO: Implement checkout flow
+            alert('Fonction de commande à implémenter');
+        });
+    }
+
+    // Store current category and search for cart updates
+    window.currentCategoryId = null;
+    window.currentSearchQuery = null;
 
     // Back button on product page (preserve history -> returns to previous filter/search/scroll)
     const backProductBtn = document.getElementById('back-product');
@@ -100,8 +346,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // Charger les catégories puis gérer param ?category=slug
+    // Charger les catégories et les pays d'origine
     await loadMainCategories();
+    await loadOriginCountries();
 
     const params = new URLSearchParams(window.location.search);
     const catSlug = params.get('category');
@@ -140,7 +387,7 @@ function showCategoryView() {
     currentCategoryName = null;
 }
 
-function showCategoryProductsView(categoryName) {
+async function showCategoryProductsView(categoryName) {
     const cv = document.getElementById('category-view');
     const cpv = document.getElementById('category-products-view');
     const srv = document.getElementById('search-results-view');
@@ -149,6 +396,25 @@ function showCategoryProductsView(categoryName) {
     if (srv) srv.style.display = 'none';
     const title = document.getElementById('category-title');
     if (title) title.textContent = categoryName;
+
+    // Update back button text based on category level
+    const backButtonText = document.getElementById('back-button-text');
+    if (backButtonText && currentCategoryId) {
+        try {
+            // Check if current category is a main category (level 0)
+            const mainCategories = await supabaseAPI.getMainCategories();
+            const isMainCategory = mainCategories.some(cat => cat.unique_id === currentCategoryId);
+
+            if (isMainCategory) {
+                backButtonText.textContent = 'Accueil';
+            } else {
+                backButtonText.textContent = 'Retour';
+            }
+        } catch (err) {
+            console.error('Erreur lors de la vérification du niveau de catégorie:', err);
+            backButtonText.textContent = 'Retour';
+        }
+    }
 }
 
 function showSearchResultsView(query) {
@@ -167,6 +433,8 @@ async function loadMainCategories() {
     try {
         const categories = await supabaseAPI.getMainCategories();
         const categoryGrid = document.querySelector('.category-grid');
+        const menuCategoryList = document.getElementById('menu-category-list');
+
         if (!categoryGrid) return;
 
         categoryGrid.innerHTML = '';
@@ -176,6 +444,7 @@ async function loadMainCategories() {
             return;
         }
 
+        // Display categories in main grid
         categories.forEach(cat => {
             const div = document.createElement('div');
             div.className = 'category-item';
@@ -196,9 +465,51 @@ async function loadMainCategories() {
             });
             categoryGrid.appendChild(div);
         });
+
+        // Display categories in menu
+        displayCategoriesInMenu(categories);
     } catch (err) {
         console.error('Erreur loadMainCategories', err);
     }
+}
+
+function displayCategoriesInMenu(categories) {
+    const menuCategoryList = document.getElementById('menu-category-list');
+    if (!menuCategoryList) return;
+
+    menuCategoryList.innerHTML = '';
+
+    categories.forEach(cat => {
+        const div = document.createElement('div');
+        div.className = 'menu-category-item';
+        const imgUrl = normalizeImageUrl(cat.image) || 'placeholder.jpg';
+
+        div.innerHTML = `
+            <div class="menu-category-icon">
+                <img src="${imgUrl}" alt="${cat.name}">
+            </div>
+            <span class="menu-category-name">${cat.name}</span>
+        `;
+
+        div.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            currentCategoryId = cat.unique_id;
+            currentCategoryName = cat.name;
+            const slug = cat.slug || cat.unique_id;
+            // store current scroll so back can restore it
+            history.pushState({ category: slug, scrollY: window.scrollY }, '', `?category=${encodeURIComponent(slug)}`);
+            // load products first to avoid UI flash; then show view
+            await loadProductsByCategory(cat.unique_id);
+            showCategoryProductsView(cat.name);
+            // Update current category for cart updates
+            window.currentCategoryId = cat.unique_id;
+            window.currentSearchQuery = null;
+            // Close menu after category selection
+            closeMenu();
+        });
+
+        menuCategoryList.appendChild(div);
+    });
 }
 
 async function loadProductsByCategory(categoryId) {
@@ -215,8 +526,29 @@ async function searchProducts(query) {
         const products = await supabaseAPI.searchProducts(query);
         showSearchResultsView(query);
         displaySearchProducts(products);
+        window.currentSearchQuery = query;
+        window.currentCategoryId = null;
     } catch (err) {
         console.error('Erreur searchProducts', err);
+    }
+}
+
+// Fonction pour charger les pays d'origine
+async function loadOriginCountries() {
+    try {
+        const countries = await supabaseAPI.getOriginCountries();
+        originCountriesMap.clear();
+
+        // Créer une Map pour un accès rapide par unique_id
+        countries.forEach(country => {
+            if (country.unique_id && country.name) {
+                originCountriesMap.set(country.unique_id, country.name);
+            }
+        });
+
+        console.log('Pays d\'origine chargés:', originCountriesMap.size);
+    } catch (err) {
+        console.error('Erreur lors du chargement des pays d\'origine:', err);
     }
 }
 
@@ -242,32 +574,136 @@ function displayCategoryProducts(products) {
         const tile = document.createElement('div');
         tile.className = 'product-tile';
         const imgUrl = normalizeImageUrl(p.main_picture) || 'placeholder.jpg';
+        const cart = getCart();
+        const existingItem = cart.find(item => item.id === p.unique_id);
+        const quantity = existingItem ? existingItem.qty : 0;
+
         tile.innerHTML = `
-            <img src="${imgUrl}" alt="${p.name}" onerror="this.src='placeholder.jpg'">
-            <h3>${p.name}</h3>
-            <div class="price">${formatPrice(p.pv_ttc || 0)}</div>
-            <div class="product-actions">
-                <a class="view-link" href="product.html?id=${p.unique_id}">Voir le produit</a>
-                <button class="add-to-cart" data-id="${p.unique_id}" aria-label="Ajouter au panier" title="Ajouter au panier">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 6H21L20 12H8L6 6Z" stroke="#ff7a00" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="10" cy="19" r="1" fill="#ff7a00"/>
-                        <circle cx="18" cy="19" r="1" fill="#ff7a00"/>
+            <div class="product-favorite">
+                <button class="favorite-btn" data-id="${p.unique_id}" aria-label="Ajouter aux favoris">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                     </svg>
                 </button>
+            </div>
+            <img src="${imgUrl}" alt="${p.name}">
+            <h3>${p.name}</h3>
+            <div class="product-info">
+                ${(() => {
+                    // Simple weight display - minimal version
+                    let displayWeight = '';
+
+                    try {
+                        // Combine poids + os_poids_valeur with conversions
+                        if (p.poids && p.os_poids_valeur) {
+                            const value = parseFloat(p.poids);
+
+                            // Don't display if value is 0 or negative
+                            if (value <= 0) {
+                                return '';
+                            }
+
+                            const unitMatch = p.os_poids_valeur.toLowerCase().match(/(kg|g|l|ml|pièce|portion|barquette|sachet|paquet)/);
+                            let unit = unitMatch ? unitMatch[1] : '';
+
+                            // Apply conversions
+                            if (unit === 'kg' && value < 1) {
+                                // Convert kg to g
+                                unit = 'g';
+                                const gramsValue = formatWeightValue(value * 1000);
+                                displayWeight = `<div class="product-info-item">${gramsValue} ${unit}</div>`;
+                            } else if (unit === 'l' && value < 1) {
+                                // Convert L to cl
+                                unit = 'cl';
+                                const clValue = formatWeightValue(value * 100);
+                                displayWeight = `<div class="product-info-item">${clValue} ${unit}</div>`;
+                            } else {
+                                // No conversion needed
+                                const formattedValue = formatWeightValue(value);
+                                displayWeight = `<div class="product-info-item">${formattedValue} ${unit}</div>`;
+                            }
+                        } else if (p.os_poids_valeur && p.os_poids_valeur !== '' && p.os_poids_valeur !== '0') {
+                            displayWeight = `<div class="product-info-item">${p.os_poids_valeur}</div>`;
+                        } else if (p.poids !== null && p.poids !== undefined && p.poids !== '' && p.poids !== 0) {
+                            displayWeight = `<div class="product-info-item">${p.poids}</div>`;
+                        }
+                    } catch (error) {
+                        console.error('Error in weight display:', error);
+                        displayWeight = '';
+                    }
+
+                    return displayWeight;
+                })()}
+                ${(() => {
+                    // Display origin country if available
+                    let displayOrigin = '';
+                    if (p.id_origine_country && originCountriesMap.has(p.id_origine_country)) {
+                        const countryName = originCountriesMap.get(p.id_origine_country);
+                        displayOrigin = `<div class="product-info-item">${countryName}</div>`;
+                    }
+                    return displayOrigin;
+                })()}
+                ${p.label || p.labels ? `<div class="product-info-item">${p.label || p.labels}</div>` : ''}
+            </div>
+            <div class="price-actions-container">
+                <div class="price">${formatPrice(p.pv_ttc || 0)}</div>
+                <div class="product-actions">
+                ${quantity > 0 ? `
+                    <div class="quantity-controls">
+                        <button class="quantity-btn quantity-decrease" data-id="${p.unique_id}" aria-label="Diminuer quantité">-</button>
+                        <span class="quantity-display">${quantity}</span>
+                        <button class="quantity-btn quantity-increase" data-id="${p.unique_id}" aria-label="Augmenter quantité">+</button>
+                    </div>
+                ` : `
+                    <button class="add-to-cart" data-id="${p.unique_id}" aria-label="Ajouter au panier" title="Ajouter au panier">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 6H21L20 12H8L6 6Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="10" cy="19" r="1" fill="currentColor"/>
+                            <circle cx="18" cy="19" r="1" fill="currentColor"/>
+                        </svg>
+                    </button>
+                `}
+                </div>
             </div>
         `;
         frag.appendChild(tile);
 
-        // attach event listeners on the created element
+        // Make tile clickable for product details
+        tile.classList.add('clickable');
+        tile.addEventListener('click', (e) => {
+            // Don't navigate if clicking on cart or favorite button
+            if (e.target.closest('.add-to-cart') || e.target.closest('.favorite-btn')) {
+                return;
+            }
+            window.location.href = `product.html?id=${p.unique_id}`;
+        });
+
+        // Quantity controls event listeners
+        tile.querySelector('.quantity-increase')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            changeItemQty(p.unique_id, 1);
+            updateCartDisplay();
+        });
+
+        tile.querySelector('.quantity-decrease')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            changeItemQty(p.unique_id, -1);
+            updateCartDisplay();
+        });
+
+        // Add to cart button (when quantity is 0)
         tile.querySelector('.add-to-cart')?.addEventListener('click', (e) => {
+            e.stopPropagation();
             addToCart({ id: p.unique_id, name: p.name, price: p.pv_ttc || 0, qty: 1 });
+            updateCartDisplay();
+        });
+
+        // Favorite button functionality
+        tile.querySelector('.favorite-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
             const btn = e.currentTarget;
-            btn.textContent = 'Ajouté';
-            setTimeout(() => btn.textContent = '', 1200); // icon-only for next state; we'll reset to icon in render
-            // update count
-            updateCartCount();
-            // re-rendering icon text reset handled by leave as is (icon-only)
+            btn.classList.toggle('active');
+            console.log('Favorite toggled for product:', p.unique_id);
         });
     });
 
@@ -299,34 +735,357 @@ function displaySearchProducts(products) {
         const tile = document.createElement('div');
         tile.className = 'product-tile';
         const imgUrl = normalizeImageUrl(p.main_picture) || 'placeholder.jpg';
+        const cart = getCart();
+        const existingItem = cart.find(item => item.id === p.unique_id);
+        const quantity = existingItem ? existingItem.qty : 0;
+
         tile.innerHTML = `
-            <img src="${imgUrl}" alt="${p.name}" onerror="this.src='placeholder.jpg'">
-            <h3>${p.name}</h3>
-            <div class="price">${formatPrice(p.pv_ttc || 0)}</div>
-            <div class="product-actions">
-                <a class="view-link" href="product.html?id=${p.unique_id}">Voir le produit</a>
-                <button class="add-to-cart" data-id="${p.unique_id}" aria-label="Ajouter au panier" title="Ajouter au panier">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M6 6H21L20 12H8L6 6Z" stroke="#ff7a00" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="10" cy="19" r="1" fill="#ff7a00"/>
-                        <circle cx="18" cy="19" r="1" fill="#ff7a00"/>
+            <div class="product-favorite">
+                <button class="favorite-btn" data-id="${p.unique_id}" aria-label="Ajouter aux favoris">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                     </svg>
                 </button>
+            </div>
+            <img src="${imgUrl}" alt="${p.name}">
+            <h3>${p.name}</h3>
+            <div class="product-info">
+                ${p.weight ? `<div class="weight">${p.weight}</div>` : ''}
+                ${(() => {
+                    // Display origin country if available
+                    let displayOrigin = '';
+                    if (p.id_origine_country && originCountriesMap.has(p.id_origine_country)) {
+                        const countryName = originCountriesMap.get(p.id_origine_country);
+                        displayOrigin = `<div class="product-info-item">${countryName}</div>`;
+                    }
+                    return displayOrigin;
+                })()}
+            </div>
+            <div class="price-actions-container">
+                <div class="price">${formatPrice(p.pv_ttc || 0)}</div>
+                <div class="product-actions">
+                ${quantity > 0 ? `
+                    <div class="quantity-controls">
+                        <button class="quantity-btn quantity-decrease" data-id="${p.unique_id}" aria-label="Diminuer quantité">-</button>
+                        <span class="quantity-display">${quantity}</span>
+                        <button class="quantity-btn quantity-increase" data-id="${p.unique_id}" aria-label="Augmenter quantité">+</button>
+                    </div>
+                ` : `
+                    <button class="add-to-cart" data-id="${p.unique_id}" aria-label="Ajouter au panier" title="Ajouter au panier">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M6 6H21L20 12H8L6 6Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="10" cy="19" r="1" fill="currentColor"/>
+                            <circle cx="18" cy="19" r="1" fill="currentColor"/>
+                        </svg>
+                    </button>
+                `}
+                </div>
             </div>
         `;
         frag.appendChild(tile);
 
+        // Make tile clickable for product details
+        tile.classList.add('clickable');
+        tile.addEventListener('click', (e) => {
+            // Don't navigate if clicking on cart or favorite button
+            if (e.target.closest('.add-to-cart') || e.target.closest('.favorite-btn')) {
+                return;
+            }
+            window.location.href = `product.html?id=${p.unique_id}`;
+        });
+
+        // Quantity controls event listeners
+        tile.querySelector('.quantity-increase')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            changeItemQty(p.unique_id, 1);
+            updateCartDisplay();
+        });
+
+        tile.querySelector('.quantity-decrease')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            changeItemQty(p.unique_id, -1);
+            updateCartDisplay();
+        });
+
+        // Add to cart button (when quantity is 0)
         tile.querySelector('.add-to-cart')?.addEventListener('click', (e) => {
+            e.stopPropagation();
             addToCart({ id: p.unique_id, name: p.name, price: p.pv_ttc || 0, qty: 1 });
+            updateCartDisplay();
+        });
+
+        // Favorite button functionality
+        tile.querySelector('.favorite-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
             const btn = e.currentTarget;
-            btn.textContent = 'Ajouté';
-            setTimeout(() => btn.textContent = '', 1200);
-            updateCartCount();
+            btn.classList.toggle('active');
+            console.log('Favorite toggled for product:', p.unique_id);
         });
     });
 
     container.innerHTML = '';
     container.appendChild(frag);
+}
+
+// --- Cart sidebar helpers ---
+function toggleCartSidebar() {
+    const sidebar = document.getElementById('cart-sidebar');
+    if (!sidebar) return;
+
+    const isHidden = sidebar.classList.contains('hidden');
+    if (isHidden) {
+        openCartSidebar();
+    } else {
+        closeCartSidebar();
+    }
+}
+
+function openCartSidebar() {
+    const sidebar = document.getElementById('cart-sidebar');
+    if (!sidebar) return;
+    closeMenu(); // Close left menu if open
+    renderCartSidebar();
+    sidebar.classList.remove('hidden');
+    // prevent body scroll while sidebar open
+    document.body.classList.add('modal-open');
+}
+
+function closeCartSidebar() {
+    const sidebar = document.getElementById('cart-sidebar');
+    if (!sidebar) return;
+    sidebar.classList.add('hidden');
+    // restore body scrolling
+    document.body.classList.remove('modal-open');
+}
+
+// --- Cart preview modal helpers ---
+function openCartPreviewModal() {
+    const modal = document.getElementById('cart-preview-modal');
+    if (!modal) return;
+    closeMenu(); // Close left menu if open
+    renderCartPreviewModal();
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    // prevent body scroll while modal open
+    document.body.classList.add('modal-open');
+}
+
+function closeCartPreviewModal() {
+    const modal = document.getElementById('cart-preview-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    // restore body scrolling
+    document.body.classList.remove('modal-open');
+}
+
+// Close cart preview when clicking outside
+document.addEventListener('click', (e) => {
+    const cartPreviewModal = document.getElementById('cart-preview-modal');
+    const cartButton = document.getElementById('cart-button');
+
+    if (cartPreviewModal && !cartPreviewModal.classList.contains('hidden')) {
+        // Check if click is outside the modal content and not on the cart button
+        if (!cartPreviewModal.contains(e.target) && !cartButton.contains(e.target)) {
+            closeCartPreviewModal();
+        }
+    }
+});
+
+function renderCartSidebar() {
+    const contentContainer = document.getElementById('cart-sidebar-content');
+
+    if (!contentContainer) return;
+
+    const cart = getCart();
+    contentContainer.innerHTML = '';
+
+    if (!cart || cart.length === 0) {
+        contentContainer.innerHTML = `
+            <div class="cart-sidebar-empty">
+                <p>Votre panier est vide</p>
+                <p style="font-size: 0.9rem; color: #6c757d; margin-top: 0.5rem;">Ajoutez des produits pour commencer vos achats</p>
+            </div>
+        `;
+        return;
+    }
+
+    // Create cart items list
+    const itemsList = document.createElement('div');
+    itemsList.className = 'cart-sidebar-items';
+
+    cart.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'cart-sidebar-item';
+        itemDiv.innerHTML = `
+            <div class="cart-sidebar-item-image">
+                <img src="placeholder.jpg" alt="${item.name}">
+            </div>
+            <div class="cart-sidebar-item-details">
+                <div class="cart-sidebar-item-name">${item.name}</div>
+                <div class="cart-sidebar-item-price">${formatPrice(item.price || 0)}</div>
+                <div class="cart-sidebar-item-quantity">
+                    <button class="cart-sidebar-qty-decr" data-id="${item.id}" aria-label="Diminuer">−</button>
+                    <span>${item.qty}</span>
+                    <button class="cart-sidebar-qty-incr" data-id="${item.id}" aria-label="Augmenter">+</button>
+                </div>
+            </div>
+            <div class="cart-sidebar-item-remove">
+                <button class="cart-sidebar-remove" data-id="${item.id}" aria-label="Supprimer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+        itemsList.appendChild(itemDiv);
+    });
+
+    // Create footer with total and checkout
+    const footer = document.createElement('div');
+    footer.className = 'cart-sidebar-footer';
+    footer.innerHTML = `
+        <div class="cart-sidebar-total">
+            <span>Total :</span>
+            <strong>${formatPrice(calculateCartTotal())}</strong>
+        </div>
+        <div class="cart-sidebar-actions">
+            <button class="btn-secondary" id="cart-sidebar-clear">Vider le panier</button>
+            <button class="btn-primary" id="cart-sidebar-checkout">Commander</button>
+        </div>
+    `;
+
+    contentContainer.appendChild(itemsList);
+    contentContainer.appendChild(footer);
+
+    // Attach events for quantity buttons
+    contentContainer.querySelectorAll('.cart-sidebar-qty-incr').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = e.currentTarget.getAttribute('data-id');
+            changeItemQty(id, 1);
+            renderCartSidebar();
+            updateCartDisplay();
+        });
+    });
+    contentContainer.querySelectorAll('.cart-sidebar-qty-decr').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = e.currentTarget.getAttribute('data-id');
+            changeItemQty(id, -1);
+            renderCartSidebar();
+            updateCartDisplay();
+        });
+    });
+    contentContainer.querySelectorAll('.cart-sidebar-remove').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = e.currentTarget.getAttribute('data-id');
+            removeCartItem(id);
+            renderCartSidebar();
+            updateCartDisplay();
+        });
+    });
+
+    // Attach events for footer buttons
+    const clearBtn = contentContainer.querySelector('#cart-sidebar-clear');
+    const checkoutBtn = contentContainer.querySelector('#cart-sidebar-checkout');
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Vider le panier ?')) {
+                saveCart([]);
+                renderCartSidebar();
+                updateCartDisplay();
+            }
+        });
+    }
+
+    if (checkoutBtn) {
+        checkoutBtn.addEventListener('click', () => {
+            // TODO: Implement checkout flow
+            alert('Fonction de commande à implémenter');
+        });
+    }
+}
+
+function renderCartPreviewModal() {
+    const itemsContainer = document.getElementById('cart-preview-items');
+    const totalEl = document.getElementById('cart-preview-total-amount');
+
+    if (!itemsContainer) return;
+
+    const cart = getCart();
+    itemsContainer.innerHTML = '';
+
+    if (!cart || cart.length === 0) {
+        itemsContainer.innerHTML = `
+            <div class="cart-preview-empty">
+                <p>Votre panier est vide</p>
+            </div>
+        `;
+        if (totalEl) totalEl.textContent = formatPrice(0);
+        return;
+    }
+
+    // Show only first 3 items for preview
+    const previewItems = cart.slice(0, 3);
+    const hasMoreItems = cart.length > 3;
+
+    previewItems.forEach(item => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'cart-preview-item';
+        itemDiv.innerHTML = `
+            <img src="placeholder.jpg" alt="${item.name}">
+            <div class="cart-preview-item-details">
+                <div class="cart-preview-item-name">${item.name}</div>
+                <div class="cart-preview-item-price">${formatPrice(item.price || 0)}</div>
+            </div>
+            <div class="cart-preview-item-quantity">
+                <button class="cart-preview-qty-decr" data-id="${item.id}" aria-label="Diminuer">−</button>
+                <span>${item.qty}</span>
+                <button class="cart-preview-qty-incr" data-id="${item.id}" aria-label="Augmenter">+</button>
+            </div>
+        `;
+        itemsContainer.appendChild(itemDiv);
+    });
+
+    // Add "and X more items" if there are more than 3
+    if (hasMoreItems) {
+        const moreDiv = document.createElement('div');
+        moreDiv.className = 'cart-preview-item';
+        moreDiv.innerHTML = `
+            <div style="width: 40px; height: 40px; background: #f8f9fa; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #6c757d; font-size: 0.8rem;">
+                +${cart.length - 3}
+            </div>
+            <div class="cart-preview-item-details">
+                <div class="cart-preview-item-name">${cart.length - 3} autre${cart.length - 3 > 1 ? 's' : ''} article${cart.length - 3 > 1 ? 's' : ''}</div>
+            </div>
+        `;
+        itemsContainer.appendChild(moreDiv);
+    }
+
+    // attach events for quantity buttons
+    itemsContainer.querySelectorAll('.cart-preview-qty-incr').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = e.currentTarget.getAttribute('data-id');
+            changeItemQty(id, 1);
+            renderCartPreviewModal();
+            updateCartDisplay();
+        });
+    });
+    itemsContainer.querySelectorAll('.cart-preview-qty-decr').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = e.currentTarget.getAttribute('data-id');
+            changeItemQty(id, -1);
+            renderCartPreviewModal();
+            updateCartDisplay();
+        });
+    });
+
+    if (totalEl) totalEl.textContent = formatPrice(calculateCartTotal());
 }
 
 // --- Cart modal helpers ---

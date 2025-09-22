@@ -55,10 +55,9 @@ const supabaseAPI = {
             .select('*')
             .contains('id_cat_0_list', [categoryId])
             .order('name');
-        
+
         if (error) {
             console.error('Erreur lors de la récupération des produits:', error);
-            console.error('Détails de l\'erreur:', error.message, error.details);
             return [];
         }
         console.log('Produits récupérés:', data.length);
@@ -138,9 +137,23 @@ const supabaseAPI = {
             .from('origines')
             .select('*')
             .order('nom');
-        
+
         if (error) {
             console.error('Erreur lors de la récupération des origines:', error);
+            return [];
+        }
+        return data;
+    },
+
+    // Récupérer les pays d'origine
+    async getOriginCountries() {
+        const { data, error } = await supabase
+            .from('origine_pays')
+            .select('*')
+            .order('name');
+
+        if (error) {
+            console.error('Erreur lors de la récupération des pays d\'origine:', error);
             return [];
         }
         return data;
