@@ -360,8 +360,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadMainCategories();
     await loadOriginCountries();
 
-    const params = new URLSearchParams(window.location.search);
-    const catSlug = params.get('category');
+    // Parse category from URL path (e.g., /index/slug-de-la-category)
+    const pathParts = window.location.pathname.split('/').filter(part => part);
+    const catSlug = pathParts.length >= 2 && pathParts[0] === 'index' ? pathParts[1] : null;
+
     if (catSlug) {
         try {
             const categories = await supabaseAPI.getMainCategories();
@@ -369,7 +371,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (cat) {
                 currentCategoryId = cat.unique_id;
                 currentCategoryName = cat.name;
-                history.replaceState({ category: cat.slug || cat.unique_id }, '', `?category=${encodeURIComponent(cat.slug || cat.unique_id)}`);
+                history.replaceState({ category: cat.slug || cat.unique_id }, '', `/index/${encodeURIComponent(cat.slug || cat.unique_id)}`);
                 // load products first, then show view to avoid flicker
                 await loadProductsByCategory(cat.unique_id);
                 showCategoryProductsView(cat.name);
@@ -468,7 +470,7 @@ async function loadMainCategories() {
                 currentCategoryName = cat.name;
                 const slug = cat.slug || cat.unique_id;
                 // store current scroll so back can restore it
-                history.pushState({ category: slug, scrollY: window.scrollY }, '', `?category=${encodeURIComponent(slug)}`);
+                history.pushState({ category: slug, scrollY: window.scrollY }, '', `/index/${encodeURIComponent(slug)}`);
                 // load products first to avoid UI flash; then show view
                 await loadProductsByCategory(cat.unique_id);
                 showCategoryProductsView(cat.name);
@@ -507,7 +509,7 @@ function displayCategoriesInMenu(categories) {
             currentCategoryName = cat.name;
             const slug = cat.slug || cat.unique_id;
             // store current scroll so back can restore it
-            history.pushState({ category: slug, scrollY: window.scrollY }, '', `?category=${encodeURIComponent(slug)}`);
+            history.pushState({ category: slug, scrollY: window.scrollY }, '', `/index/${encodeURIComponent(slug)}`);
             // load products first to avoid UI flash; then show view
             await loadProductsByCategory(cat.unique_id);
             showCategoryProductsView(cat.name);
