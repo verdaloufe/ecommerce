@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce Site - Profil</title>
+    <meta name="description" content="Gérez votre profil et suivez vos commandes sur notre site e-commerce.">
+    <meta name="keywords" content="profil, commandes, suivi, e-commerce">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <button id="menu-toggle">Menu</button>
+        <h1>Mon E-commerce</h1>
+        <input type="search" id="search-bar" placeholder="Rechercher...">
+    </header>
+    <nav id="left-menu" class="hidden">
+        <ul>
+            <li><a href="categories.html">Catégories</a></li>
+            <li><a href="profil.html">Profil</a></li>
+        </ul>
+    </nav>
+    <main>
+        <section id="profile-info">
+            <h2>Informations Profil</h2>
+            <form>
+                <label>Nom: <input type="text" placeholder="Votre nom"></label><br>
+                <label>Email: <input type="email" placeholder="Votre email"></label><br>
+                <label>Adresse: <textarea placeholder="Votre adresse"></textarea></label><br>
+                <button type="submit">Mettre à jour</button>
+            </form>
+        </section>
+        <section id="order-tracking">
+            <h2>Suivi des Commandes</h2>
+            <ul>
+                <li>Commande #123: En préparation</li>
+                <li>Commande #124: Expédiée</li>
+                <li>Commande #125: Livrée</li>
+            </ul>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Mon E-commerce</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>

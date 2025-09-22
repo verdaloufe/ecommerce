@@ -1,0 +1,417 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+#menu-toggle {
+    background: none;
+    border: none;
+    color: rgb(0, 0, 0);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+#search-bar {
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 25px;
+    width: 300px;
+    font-size: 1rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 280px;
+    background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+    color: white;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+}
+
+nav:not(.hidden) {
+    transform: translateX(0);
+}
+
+nav ul {
+    list-style: none;
+    padding: 2rem 1rem;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    display: block;
+    padding: 1rem;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+nav a:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+main {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+#categories {
+    margin-bottom: 3rem;
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+#categories h2 {
+    margin-bottom: 1.5rem;
+    color: #2c3e50;
+    font-size: 1.5rem;
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 120px);
+    gap: 1rem;
+    padding: 1rem 0;
+    justify-content: start;
+}
+
+.category-item {
+    width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+    transition: transform 0.2s;
+}
+
+.category-item:hover {
+    transform: translateY(-5px);
+}
+
+.category-item img {
+    width: 100%;
+    height: 80px;
+    border-radius: 10px;
+    object-fit: cover;
+    border: none;
+    transition: transform 0.15s;
+}
+
+.category-item:hover img {
+    border-color: #667eea;
+}
+
+.category-item p {
+    margin: 0;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.95rem;
+    text-align: center;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#products,
+#category-products,
+#search-products {
+    display: grid;
+    /* allow multiple product tiles per row on desktop while keeping wrap */
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+}
+
+.product-tile {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: 1px solid #e9ecef;
+}
+
+.product-tile:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.product-tile img {
+    max-width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.product-tile h3 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: #2c3e50;
+}
+
+.labels {
+    display: flex;
+    justify-content: center;
+    margin: 1rem 0;
+    gap: 0.5rem;
+}
+
+.label {
+    width: 35px;
+    height: 35px;
+    object-fit: contain;
+    border-radius: 5px;
+}
+
+.price {
+    font-weight: bold;
+    color: #e74c3c;
+    font-size: 1.3rem;
+    margin: 0.5rem 0;
+}
+
+.price s {
+    color: #6c757d;
+    font-size: 1rem;
+    margin-right: 0.5rem;
+}
+
+.weight, .origin {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin: 0.3rem 0;
+}
+
+.product-tile a {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.8rem 2rem;
+    border-radius: 25px;
+    text-decoration: none;
+    margin-top: 1rem;
+    transition: transform 0.3s;
+}
+
+.product-tile a:hover {
+    transform: scale(1.05);
+}
+
+footer {
+    text-align: center;
+    padding: 2rem;
+    background: #2c3e50;
+    color: white;
+    margin-top: 3rem;
+}
+
+/* Modal (cart) styles */
+.modal.hidden {
+    display: none !important;
+    visibility: hidden;
+}
+.modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    pointer-events: auto;
+}
+.modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+}
+.modal-content {
+    position: relative;
+    background: #fff;
+    width: 940px;
+    max-width: calc(100% - 40px);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    z-index: 2001;
+    max-height: 80vh;
+    overflow: auto;
+    padding: 1rem;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+}
+.modal-header h3 {
+    margin: 0;
+}
+.modal-footer {
+    border-top: 1px solid #eee;
+    padding-top: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.modal .btn-primary {
+    background: linear-gradient(135deg, #ff7a00 0%, #ff9a33 100%);
+    color: white;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.modal .btn-secondary {
+    background: none;
+    border: 1px solid #ddd;
+    padding: 0.5rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Cart item row */
+.cart-item + .cart-item {
+    border-top: 1px solid #f3f3f3;
+}
+.cart-item img {
+    border-radius: 6px;
+}
+
+/* Prevent unexpected inner scrolls on product grid */
+#products,
+#category-products,
+#search-products {
+    overflow: visible;
+}
+
+/* Ensure body doesn't jump when modal opens (developer can toggle) */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Small improvements for product-actions layout */
+.product-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.75rem;
+}
+
+/* Make add-to-cart icon buttons visibly orange */
+.product-actions .add-to-cart svg path,
+.product-actions .add-to-cart svg circle {
+    stroke: #ff7a00;
+    fill: #ff7a00;
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    #search-bar {
+        width: 100%;
+        max-width: 300px;
+    }
+    
+    #products {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+    
+    .category-grid {
+        gap: 1rem;
+    }
+    
+    .category-item {
+        min-width: 100px;
+    }
+    
+    .back-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        padding: 1rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    #back-button, #back-search-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: transform 0.3s;
+    }
+    
+    #back-button:hover, #back-search-button:hover {
+        transform: scale(1.05);
+    }
+    
+    #category-title, #search-title {
+        margin: 0;
+        color: #2c3e50;
+    }
+    
+    .category-item img {
+        width: 60px;
+        height: 60px;
+    }
+.no-products {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #6c757d;
+    margin: 2rem 0;
+    padding: 2rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+}

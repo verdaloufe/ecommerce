@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce Site - Accueil</title>
+    <meta name="description" content="Site e-commerce avec produits variés, catégories, et suivi de commandes.">
+    <meta name="keywords" content="e-commerce, produits, catégories, profil, commandes">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="header-left" style="display:flex;align-items:center;gap:0.75rem;">
+            <a href="index.html" aria-label="Accueil">
+                <img id="logo" src="https://0f44eec5808b7046a3dcded730e63b6d.cdn.bubble.io/f1693576080956x788177672717479400/ecomalin_orange.webp?ignore_imgix=true" alt="Ecomalin" style="width:48px;height:48px;object-fit:contain;">
+            </a>
+            <button id="menu-toggle">Menu</button>
+            <!-- site title hidden by request -->
+        </div>
+        <div class="header-right" style="display:flex;align-items:center;gap:0.75rem;">
+            <input type="search" id="search-bar" placeholder="Rechercher...">
+            <div id="cart" aria-live="polite" style="display:flex;align-items:center;gap:0.5rem;">
+                <button id="cart-button" style="background:none;border:none;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;gap:0.4rem;" aria-label="Voir le panier">
+                    <!-- Cart SVG icon -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 6H21L20 12H8L6 6Z" stroke="#ff7a00" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="10" cy="19" r="1" fill="#ff7a00"/>
+                        <circle cx="18" cy="19" r="1" fill="#ff7a00"/>
+                    </svg>
+                    <span class="visually-hidden">Panier</span>
+                </button>
+                <span id="cart-count" style="background:#e74c3c;color:white;padding:0.2rem 0.6rem;border-radius:12px;font-weight:600;">0</span>
+            </div>
+            <button id="profile-button" aria-label="Profil" style="width:40px;height:40px;border-radius:20px;border:none;background:#f1f3f5;display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer;">
+                <span id="profile-initial">U</span>
+            </button>
+        </div>
+    </header>
+    <nav id="left-menu" class="hidden">
+        <div class="menu-categories" style="padding:1rem;">
+            <h3 style="color:white;margin-bottom:0.5rem;">Catégories</h3>
+            <ul id="menu-category-list" style="list-style:none;padding:0;margin:0;">
+                <!-- Les catégories seront injectées ici -->
+            </ul>
+        </div>
+    </nav>
+    <main>
+        <div id="category-view">
+            <section id="categories">
+                <h2>Catégories</h2>
+                <div class="category-grid">
+                    <!-- Les catégories seront chargées dynamiquement -->
+                </div>
+            </section>
+            
+            <section id="products">
+                <!-- Les produits seront chargés dynamiquement via JavaScript -->
+            </section>
+        </div>
+        
+        <div id="category-products-view" style="display: none;">
+            <div class="back-header">
+                <button id="back-button">← Retour</button>
+                <h2 id="category-title">Produits de la catégorie</h2>
+            </div>
+            <section id="category-products">
+                <!-- Les produits de la catégorie seront chargés ici -->
+            </section>
+        </div>
+        
+        <div id="search-results-view" style="display: none;">
+            <div class="back-header">
+                <button id="back-search-button">← Retour</button>
+                <h2 id="search-title">Résultats de recherche</h2>
+            </div>
+            <section id="search-products">
+                <!-- Les résultats de recherche seront chargés ici -->
+            </section>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2023 @ecomalin.net</p>
+    </footer>
+
+    <!-- Cart modal (hidden by default) -->
+    <div id="cart-modal" class="modal hidden" style="display:none" aria-hidden="true" role="dialog" aria-label="Panier">
+        <div class="modal-overlay" data-close="true"></div>
+        <div class="modal-content">
+            <header class="modal-header">
+                <h3>Votre panier</h3>
+                <button id="cart-close" aria-label="Fermer">✕</button>
+            </header>
+            <section id="cart-items">
+                <!-- Items will be injected here -->
+            </section>
+            <footer class="modal-footer">
+                <div class="cart-total">
+                    <span>Total :</span>
+                    <strong id="cart-total-amount">€0,00</strong>
+                </div>
+                <div class="cart-actions">
+                    <button id="cart-clear" class="btn-secondary">Vider le panier</button>
+                    <button id="cart-checkout" class="btn-primary">Passer à la caisse</button>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

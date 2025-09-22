@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce Site - Détails Produit</title>
+    <meta name="description" content="Détails du produit sélectionné sur notre site e-commerce.">
+    <meta name="keywords" content="produit, détails, e-commerce">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+            <a href="index.html" aria-label="Accueil">
+                <img id="logo-page" src="https://0f44eec5808b7046a3dcded730e63b6d.cdn.bubble.io/f1693576080956x788177672717479400/ecomalin_orange.webp?ignore_imgix=true" alt="Ecomalin" style="width:48px;height:48px;object-fit:contain;">
+            </a>
+            <h1>Mon E-commerce</h1>
+        </div>
+    </header>
+    <nav id="left-menu" class="hidden">
+        <ul>
+            <li><a href="categories.html">Catégories</a></li>
+            <li><a href="profil.html">Profil</a></li>
+        </ul>
+    </nav>
+    <main>
+        <section id="product-detail">
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+                <button id="back-product" aria-label="Retour" style="background:none;border:none;font-size:1.2rem;cursor:pointer;">← Retour</button>
+                <h2 id="product-title">Nom du Produit</h2>
+            </div>
+            <img id="product-image" src="placeholder.jpg" alt="Produit" style="max-width:400px;width:100%;height:auto;border-radius:8px;">
+            <p id="product-description">Description détaillée du produit. Ici, vous pouvez ajouter plus d'informations sur le produit, ses caractéristiques, etc.</p>
+            <p id="product-price">Prix: 10€</p>
+            <div style="display:flex;gap:1rem;align-items:center;">
+                <button id="product-add-to-cart" aria-label="Ajouter au panier" style="background:#ff7a00;color:white;border:none;padding:0.6rem 1rem;border-radius:8px;cursor:pointer;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:6px;">
+                        <path d="M6 6H21L20 12H8L6 6Z" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="10" cy="19" r="1" fill="#fff"/>
+                        <circle cx="18" cy="19" r="1" fill="#fff"/>
+                    </svg>
+                    Ajouter au panier
+                </button>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Mon E-commerce</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>
